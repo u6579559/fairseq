@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+import shutil
 import subprocess
 import sys
 from setuptools import setup, find_packages, Extension
@@ -195,6 +196,7 @@ def do_setup(package_data):
             'numpy<1.20.0; python_version<"3.7"',
             'numpy; python_version>="3.7"',
             "regex",
+            "sacrebleu>=1.4.12",
             "torch",
             "tqdm",
         ],
@@ -246,7 +248,10 @@ if __name__ == "__main__":
         # symlink examples into fairseq package so package_data accepts them
         fairseq_examples = os.path.join("fairseq", "examples")
         if "build_ext" not in sys.argv[1:] and not os.path.exists(fairseq_examples):
-            os.symlink(os.path.join("..", "examples"), fairseq_examples)
+            if os.name == 'nt':
+                shutil.copytree("examples", fairseq_examples)
+            else:
+                os.symlink(os.path.join("..", "examples"), fairseq_examples)
 
         package_data = {
             "fairseq": (
@@ -256,4 +261,7 @@ if __name__ == "__main__":
         do_setup(package_data)
     finally:
         if "build_ext" not in sys.argv[1:] and os.path.islink(fairseq_examples):
-            os.unlink(fairseq_examples)
+            if os.name == 'nt':
+                shutil.rmtree(fairseq_examples)
+            else:
+                os.unlink(fairseq_examples)
